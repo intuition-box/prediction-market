@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔮 Intuition Prediction Market</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 Intuition Prediction Market</h1>
+
+        <!-- Wallet Connection -->
+        <div class="section">
+            <button onclick="connectWallet()">🦊 Connect MetaMask Wallet</button>
+            <p id="wallet">Not connected</p>
+        </div>
+
+        <!-- Tinu Faucet -->
+        <div class="section">
+            <h2>🚰 Tinu Faucet</h2>
+            <p>Get 1000 Tinu tokens every 24 hours</p>
+            <button id="faucetBtn" onclick="requestTinu()">🚰 Request Tinu</button>
+            <p id="faucetStatus">🚰 Faucet ready to use</p>
+        </div>
+
+        <!-- House Dashboard -->
+        <div id="houseDashboard" class="section" style="display: none;">
+            <h2>   House Dashboard</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Predictions</h3>
+                    <p id="totalPredictions">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Volume</h3>
+                    <p id="totalVolume">0 Tinu</p>
+                </div>
+            </div>
+
+            <h3>📝 Create New Prediction</h3>
+            <div class="form-group">
+                <label for="predictionText">Prediction Text:</label>
+                <input type="text" id="predictionText" placeholder="Enter your prediction...">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="endTimeDays">Days:</label>
+                    <input type="number" id="endTimeDays" value="1" min="0" max="30">
+                </div>
+                <div class="form-group">
+                    <label for="endTimeHours">Hours:</label>
+                    <input type="number" id="endTimeHours" value="0" min="0" max="23">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="yesOdds">Yes Odds (e.g., 200 = 2.0x):</label>
+                    <input type="number" id="yesOdds" value="200" min="110">
+                </div>
+                <div class="form-group">
+                    <label for="noOdds">No Odds (e.g., 180 = 1.8x):</label>
+                    <input type="number" id="noOdds" value="180" min="110">
+                </div>
+            </div>
+            <button onclick="createPrediction()">🎯 Create Prediction</button>
+        </div>
+
+        <!-- Player Dashboard -->
+        <div id="userDashboard" class="section" style="display: none;">
+            <h2>   Player Dashboard</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Tinu Balance</h3>
+                    <p id="tinuBalance">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Bets</h3>
+                    <p id="activeBets">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Winnings</h3>
+                    <p id="totalWinnings">0 Tinu</p>
+                </div>
+            </div>
+
+            <!-- Quick Bet Section -->
+            <div class="quick-bet-section">
+                <h3>🎲 Quick Bet</h3>
+                <div class="form-group">
+                    <label for="quickPredictionId">Prediction ID:</label>
+                    <input type="number" id="quickPredictionId" placeholder="Enter prediction ID">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quickBetChoice">Your Choice:</label>
+                        <select id="quickBetChoice">
+                            <option value="true">✅ Yes</option>
+                            <option value="false">❌ No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quickBetAmount">Amount (Tinu):</label>
+                        <input type="number" id="quickBetAmount" placeholder="100" min="1" max="1000">
+                    </div>
+                </div>
+                <button onclick="quickPlaceBet()">🎯 Place Quick Bet</button>
+            </div>
+
+            <!-- Available Predictions for Betting -->
+            <div class="available-predictions">
+                <h3>📋 Available Predictions to Bet On</h3>
+                <div id="availablePredictionsList" class="predictions-grid">
+                    <!-- Available predictions will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Predictions Table -->
+        <div class="section">
+            <h2>   All Predictions</h2>
+            <table id="predictionTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Prediction</th>
+                        <th>End Time</th>
+                        <th>Yes Odds</th>
+                        <th>No Odds</th>
+                        <th>Yes Bets</th>
+                        <th>No Bets</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bet Modal -->
+    <div id="betModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeBetModal()">&times;</span>
+            <h2>   Place Your Bet</h2>
+            <div class="bet-details">
+                <p><strong>Prediction:</strong> <span id="betPredictionText"></span></p>
+                <p><strong>Yes Odds:</strong> <span id="betYesOdds"></span></p>
+                <p><strong>No Odds:</strong> <span id="betNoOdds"></span></p>
+                <p><strong>Your Tinu Balance:</strong> <span id="betTinuBalance"></span></p>
+            </div>
+            <div class="form-group">
+                <label for="betChoice">Your Choice:</label>
+                <select id="betChoice" onchange="calculatePotentialWinnings()">
+                    <option value="true">✅ Yes</option>
+                    <option value="false">❌ No</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="betAmount">Bet Amount (Tinu):</label>
+                <input type="number" id="betAmount" placeholder="100" min="1" max="1000" oninput="calculatePotentialWinnings()">
+            </div>
+            <div class="potential-winnings">
+                <p><strong>Potential Winnings:</strong> <span id="potentialWinnings">0</span> Tinu</p>
+            </div>
+            <button onclick="placeBet()">🎯 Place Bet</button>
+        </div>
+    </div>
+
+    <!-- Resolve Modal -->
+    <div id="resolveModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeResolveModal()">&times;</span>
+            <h2>⚖️ Resolve Prediction</h2>
+            <div class="resolve-details">
+                <p><strong>Prediction:</strong> <span id="resolvePredictionText"></span></p>
+            </div>
+            <div class="form-group">
+                <label for="resolveOutcome">Outcome:</label>
+                <select id="resolveOutcome">
+                    <option value="true">✅ Yes</option>
+                    <option value="false">❌ No</option>
+                </select>
+            </div>
+            <button onclick="resolvePrediction()">⚖️ Resolve</button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Processing transaction...</p>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+</body>
+</html>
